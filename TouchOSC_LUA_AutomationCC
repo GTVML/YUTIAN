@@ -1,0 +1,156 @@
+-- Initialize global variables
+state = 0  -- 0: Stop, 1: Recording, 2: Loop Playback
+midi_data = {}  -- Used to store recorded data
+frame_count = 0  -- Global frame counter
+start_frame = 0  -- Base frame for recording or playback
+playback_index = 1  -- Current playback index
+last_button_value = 0  -- Previous button state, used for debouncing
+random_speed = 1  -- Random mode speed (controlled by xy1)
+sine_speed = 0.05  -- Sine wave speed (controlled by xy1)
+amplitude = 0.5  -- Amplitude (controlled by xy1)
+
+-- Update button color
+function updateButtonColor()
+    local button1 = root:findByName("button1")
+    if button1 then
+        if state == 0 then
+            button1.color = Color(0.5, 0.5, 0.5, 1)  -- Gray
+        elseif state == 1 then
+            button1.color = Color(1, 0, 0, 1)  -- Red
+        elseif state == 2 then
+            button1.color = Color(0, 1, 0, 1)  -- Green
+        end
+    end
+end
+
+-- Update the color of radial1
+function updateRadial1Color()
+    local radial1 = root:findByName("radial1")
+    if radial1 then
+        if state == 0 then
+            radial1.color = Color(0.5, 0.5, 0.5, 1)  -- Gray
+        elseif state == 1 then
+            radial1.color = Color(1, 0, 0, 1)  -- Red
+        elseif state == 2 then
+            radial1.color = Color(0, 1, 0, 1)  -- Green
+        end
+    end
+end
+
+-- Update xy1 control parameters for speed and amplitude
+function updateXYControl()
+    local xy1 = root:findByName("xy1")  -- Get xy1 control
+    if xy1 then
+        random_speed = xy1.values.x  -- X-axis controls random speed
+        sine_speed = xy1.values.x * 0.1  -- Map X-axis value to sine wave speed
+        amplitude = xy1.values.y  -- Y-axis controls amplitude
+    end
+end
+
+-- Update radial1 based on the mode
+function updateRadial1ByMode()
+    local radio1 = root:findByName("radio1")  -- Get radio1 control
+    local radial1 = root:findByName("radial1")  -- Get radial1 control
+    if not (radio1 and radial1) then
+        print("Error: radio1 or radial1 not found")
+        return
+    end
+
+    local mode = radio1.values.x  -- Get the current mode
+    if mode == 1 then
+        -- Automatic random mode, adjust update frequency based on random_speed
+        if frame_count % math.floor(2 / (random_speed + 0.1)) == 0 then
+            radial1.values.x = math.random() * amplitude
+            print("Random Mode: New Value =", radial1.values.x)
+        end
+    elseif mode == 2 then
+        -- Sine wave mode, control oscillation based on sine_speed and amplitude
+        local frequency_scale = 2  -- Frequency scale factor to slow down speed
+        radial1.values.x = amplitude * math.sin(2 * math.pi * sine_speed * frequency_scale * frame_count) + 0.5
+        print("Sine Wave Mode: Value =", radial1.values.x)
+    end
+end
+
+-- Update the frame counter
+function update()
+    frame_count = frame_count + 1  -- Increment frame counter each time update() is called
+
+    -- Update button color
+    updateButtonColor()
+
+    -- Update radial1 color
+    updateRadial1Color()
+
+    -- Update xy1 control parameters
+    updateXYControl()
+
+    -- Update radial1 based on the mode
+    updateRadial1ByMode()
+
+    -- State transition logic
+    local button1 = root:findByName("button1")
+    local radio1 = root:findByName("radio1")
+    if button1 and radio1 then
+        local current_button_value = button1.values.x
+        local mode = radio1.values.x  -- Get the current mode
+
+        -- Button state transition logic
+        if current_button_value == 1 and last_button_value == 0 then
+            if state == 0 then
+                state = 1
+                if mode == 0 then
+                    midi_data = {}  -- Clear data, only clear in mode 0
+                    start_frame = frame_count  -- Initialize recording base frame
+                    print("Recording started in Default Mode")
+                end
+            elseif state == 1 then
+                state = 2
+                playback_index = 1
+                start_frame = frame_count
+                print("Playback started (Loop)")
+            elseif state == 2 then
+                state = 0
+                print("Stopped")
+            end
+        end
+        last_button_value = current_button_value
+        button1.values.x = 0  -- Reset button value
+    end
+
+    -- Loop playback logic
+    if state == 2 and #midi_data > 0 then
+        local event = midi_data[playback_index]
+        local current_frame = frame_count - start_frame
+        if current_frame >= event.time then
+            local radial1 = root:findByName("radial1")
+            if radial1 then
+                radial1.values.x = event.value
+            end
+            playback_index = playback_index + 4
+            print(string.format("Playback: Frame=%d, Value=%.2f", current_frame, event.value))
+        end
+        if playback_index > #midi_data then
+            playback_index = 1
+            start_frame = frame_count
+            print("Looping playback")
+        end
+    end
+end
+
+-- Triggered when knob value changes (for recording data)
+function onValueChanged()
+    local radio1 = root:findByName("radio1")
+    if not radio1 or radio1.values.x ~= 0 then
+        return  -- Only record data in Default Mode
+    end
+
+    if state ~= 1 then
+        return  -- Do not respond to knob value changes unless in recording state
+    end
+
+    -- Only record data in recording state
+    local radial1_value = tonumber(self.values.x) or 0  -- Ensure the value is a number
+    local current_frame = frame_count - start_frame  -- Calculate the relative frame
+    table.insert(midi_data, {time = current_frame, value = radial1_value})
+    print(string.format("Recorded: Frame=%d, Value=%.2f", current_frame, radial1_value))
+end
