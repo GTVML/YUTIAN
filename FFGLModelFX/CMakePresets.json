@@ -1,0 +1,56 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ninja-debug",
+      "displayName": "Ninja Debug (auto-fetch FFGL)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-ninja-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "FFGL_GIT_TAG": "master"
+      }
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja Release (auto-fetch FFGL)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-ninja-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "FFGL_GIT_TAG": "master"
+      }
+    },
+    {
+      "name": "make-debug",
+      "displayName": "Unix Makefiles Debug (auto-fetch FFGL)",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-make-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "FFGL_GIT_TAG": "master"
+      }
+    },
+    {
+      "name": "make-release",
+      "displayName": "Unix Makefiles Release (auto-fetch FFGL)",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-make-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "FFGL_GIT_TAG": "master"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "ninja-debug", "configurePreset": "ninja-debug" },
+    { "name": "ninja-release", "configurePreset": "ninja-release" },
+    { "name": "make-debug", "configurePreset": "make-debug" },
+    { "name": "make-release", "configurePreset": "make-release" }
+  ]
+}

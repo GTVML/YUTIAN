@@ -1,0 +1,49 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Editors/IDE
+.vscode/
+.idea/
+*.swp
+
+# Backups
+_backups/
+
+# Build artifacts (CMake, Make, Xcode)
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+CMakeScripts/
+Testing/
+Makefile
+CTestTestfile.cmake
+install_manifest.txt
+compile_commands.json
+cmake_install.cmake
+*.ninja
+.ninja_deps
+.ninja_log
+
+# FFGLModelFX specific builds
+FFGLModelFX/build*/
+FFGLModelFX/**/build*/
+FFGLModelFX/**/_deps/
+
+# Bundles / App artifacts
+*.bundle/
+*.app/
+*.dSYM/
+
+# Logs
+*.log
+
+# Vuo exported bundle (large, binary)
+00_ 3 D_efx.bundle/
+
+# Generated caches
+**/.cache/
